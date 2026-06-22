@@ -1,0 +1,367 @@
+DOCUMENTAÇÃO TÉCNICA - MÁQUINA DE CARTÃO SIMPLES
+================================================
+
+1. INTRODUÇÃO AO PROJETO
+------------------------
+O projeto "maquina-cartao-simples" é um simulador de máquina de cartão em Java, desenvolvido como um projeto didático para demonstrar operações básicas de processamento de transações de crédito e débito. O sistema foi inspirado em adquirentes reais como Cielo, Rede e Stone, implementando as principais funcionalidades de uma máquina de cartão de forma simplificada.
+
+O objetivo principal é fornecer uma base sólida para entender o funcionamento de sistemas de pagamento, com foco em boas práticas de programação orientada a objetos, tratamento de exceções e testes unitários.
+
+2. OBJETIVOS
+-----------
+- Implementar um sistema de processamento de transações de cartão de crédito e débito
+- Aplicar cálculo de taxas diferenciadas por tipo de transação
+- Permitir o cancelamento de transações
+- Gerar comprovantes detalhados das operações
+- Implementar tratamento robusto de exceções
+- Criar uma arquitetura extensível para futuras integrações
+- Desenvolver testes unitários abrangentes seguindo a estratégia TAAC
+
+3. REGRAS DE NEGÓCIO DETALHADAS
+-------------------------------
+
+3.1 Tipos de Transação
+- CRÉDITO: Aplica-se uma taxa de 5% sobre o valor bruto da transação
+- DÉBITO: Aplica-se uma taxa de 2% sobre o valor bruto da transação
+
+3.2 Estrutura da Transação
+Cada transação deve conter os seguintes atributos:
+- ID único: Identificador gerado automaticamente (UUID truncado para 8 caracteres)
+- Tipo: "CREDITO" ou "DEBITO"
+- Valor bruto: Valor original da transação
+- Taxa aplicada: Valor calculado com base no tipo de transação
+- Valor líquido: Valor bruto menos a taxa (ou 0 se cancelada)
+- Data e hora: Timestamp automático da criação da transação
+- Status: "Concluída" ou "Cancelada"
+
+3.3 Funcionalidades Obrigatórias
+- Processar transação: Cria uma nova transação com cálculo automático de taxas
+- Cancelar transação: Altera o status para "Cancelada" e zera o valor líquido
+- Listar transações: Retorna todas as transações realizadas
+- Gerar comprovante: Emite um recibo detalhado no console
+
+3.4 Regras de Exceção
+- Tipo inválido: Lança TransacaoException se o tipo não for CREDITO ou DEBITO
+- Valor inválido: Lança TransacaoException se o valor for menor ou igual a zero
+- Transação não encontrada: Lança TransacaoException ao tentar cancelar/buscar transação inexistente
+- Transação já cancelada: Lança TransacaoException ao tentar cancelar uma transação já cancelada
+
+4. ARQUITETURA DO SISTEMA
+-------------------------
+O sistema segue uma arquitetura em camadas com separação clara de responsabilidades:
+
+4.1 Camada de Modelo (Model)
+- Responsável por representar as entidades do domínio
+- Classe: Transacao
+- Localização: com.itau.maquinacartao.model
+
+4.2 Camada de Serviço (Service)
+- Contém a lógica de negócio
+- Classe: MaquinaCartaoService
+- Localização: com.itau.maquinacartao.service
+
+4.3 Camada de Exceção (Exception)
+- Tratamento de erros específicos do domínio
+- Classe: TransacaoException
+- Localização: com.itau.maquinacartao.exception
+
+4.4 Camada de Aplicação (App)
+- Ponto de entrada da aplicação
+- Classe: App
+- Localização: com.itau.maquinacartao
+
+5. ESTRUTURA DE PACOTES E CLASSES
+----------------------------------
+
+5.1 Pacote: com.itau.maquinacartao.model
+Classe: Transacao
+Atributos:
+- id: String (privado)
+- tipo: String (privado)
+- valorBruto: double (privado)
+- taxa: double (privado)
+- dataHora: LocalDateTime (privado)
+- cancelada: boolean (privado)
+
+Métodos:
+- Transacao(id, tipo, valorBruto, taxa): Construtor
+- getId(): String
+- getTipo(): String
+- getValorBruto(): double
+- getTaxa(): double
+- getDataHora(): LocalDateTime
+- getValorLiquido(): double
+- getStatus(): String
+- cancelar(): void
+- isCancelada(): boolean
+- toString(): String
+
+5.2 Pacote: com.itau.maquinacartao.service
+Classe: MaquinaCartaoService
+Constantes:
+- TAXA_CREDITO = 0.05
+- TAXA_DEBITO = 0.02
+- TIPO_CREDITO = "CREDITO"
+- TIPO_DEBITO = "DEBITO"
+
+Atributos:
+- transacoes: List<Transacao> (privado, final)
+
+Métodos públicos:
+- MaquinaCartaoService(): Construtor
+- processarTransacao(tipo, valor): Transacao
+- cancelarTransacao(id): Transacao
+- listarTransacoes(): List<Transacao>
+- gerarComprovante(id): void
+
+Métodos privados:
+- calcularTaxa(tipo, valor): double
+- gerarId(): String
+- buscarTransacaoPorId(id): Transacao
+
+5.3 Pacote: com.itau.maquinacartao.exception
+Classe: TransacaoException (extends Exception)
+Métodos:
+- TransacaoException(message): Construtor
+- TransacaoException(message, cause): Construtor
+
+5.4 Pacote: com.itau.maquinacartao
+Classe: App
+Métodos:
+- main(args[]): void (ponto de entrada)
+
+6. FLUXO DE EXECUÇÃO (EXEMPLO DE TRANSAÇÃO)
+-------------------------------------------
+
+6.1 Processamento de uma Transação de Crédito
+
+Passo 1: O cliente solicita o processamento de uma transação
+Código: maquina.processarTransacao("CREDITO", 100.0)
+
+Passo 2: Validação do valor
+- Verifica se valor > 0
+- Se inválido, lança TransacaoException
+
+Passo 3: Validação do tipo
+- Verifica se tipo é CREDITO ou DEBITO
+- Se inválido, lança TransacaoException
+
+Passo 4: Cálculo da taxa
+- Para CREDITO: taxa = 100.0 * 0.05 = 5.0
+- Para DEBITO: taxa = 100.0 * 0.02 = 2.0
+
+Passo 5: Geração do ID
+- Gera UUID e extrai primeiros 8 caracteres
+- Exemplo: "A1B2C3D4"
+
+Passo 6: Criação do objeto Transacao
+- new Transacao("A1B2C3D4", "CREDITO", 100.0, 5.0)
+- Data/hora é atribuída automaticamente
+- Status inicial: "Concluída"
+
+Passo 7: Adição à lista de transações
+- transacoes.add(transacao)
+
+Passo 8: Retorno da transação criada
+
+6.2 Cancelamento de uma Transação
+
+Passo 1: O cliente solicita o cancelamento
+Código: maquina.cancelarTransacao("A1B2C3D4")
+
+Passo 2: Busca da transação
+- Procura transação pelo ID na lista
+- Se não encontrada, lança TransacaoException
+
+Passo 3: Verificação de status
+- Se já cancelada, lança TransacaoException
+
+Passo 4: Execução do cancelamento
+- transacao.cancelar()
+- Altera status para "Cancelada"
+- Valor líquido passa a ser 0.0
+
+Passo 5: Retorno da transação cancelada
+
+7. EXEMPLOS DE CÓDIGO
+---------------------
+
+7.1 Exemplo: Processamento de Transação
+```java
+MaquinaCartaoService maquina = new MaquinaCartaoService();
+
+// Processar crédito
+Transacao credito = maquina.processarTransacao("CREDITO", 100.0);
+System.out.println(credito);
+// Saída: Transação A1B2C3D4 [CREDITO] - Valor: R$100.0 | Taxa: R$5.0 | Líquido: R$95.0 | Status: Concluída
+
+// Processar débito
+Transacao debito = maquina.processarTransacao("DEBITO", 200.0);
+System.out.println(debito);
+// Saída: Transação E5F6G7H8 [DEBITO] - Valor: R$200.0 | Taxa: R$4.0 | Líquido: R$196.0 | Status: Concluída
+```
+
+7.2 Exemplo: Cancelamento de Transação
+```java
+Transacao transacao = maquina.processarTransacao("CREDITO", 100.0);
+System.out.println("Antes: " + transacao.getValorLiquido()); // 95.0
+
+maquina.cancelarTransacao(transacao.getId());
+System.out.println("Depois: " + transacao.getValorLiquido()); // 0.0
+System.out.println("Status: " + transacao.getStatus()); // Cancelada
+```
+
+7.3 Exemplo: Listagem de Transações
+```java
+maquina.processarTransacao("CREDITO", 100.0);
+maquina.processarTransacao("DEBITO", 200.0);
+
+List<Transacao> transacoes = maquina.listarTransacoes();
+for (Transacao t : transacoes) {
+    System.out.println(t);
+}
+```
+
+7.4 Exemplo: Tratamento de Exceções
+```java
+try {
+    maquina.processarTransacao("CREDITO", 0);
+} catch (TransacaoException e) {
+    System.err.println("Erro: " + e.getMessage());
+    // Saída: Erro: Valor da transação deve ser maior que zero
+}
+
+try {
+    maquina.processarTransacao("PIX", 100.0);
+} catch (TransacaoException e) {
+    System.err.println("Erro: " + e.getMessage());
+    // Saída: Erro: Tipo de transação inválido. Use CREDITO ou DEBITO
+}
+```
+
+8. ESTRATÉGIA DE TESTES TAAC
+----------------------------
+A estratégia de testes TAAC (Test-After-Code-Coverage) foi aplicada para garantir a qualidade do código:
+
+8.1 Testes Implementados
+
+Teste 1: Criação de Transação Válida (Crédito)
+- Objetivo: Verificar se uma transação de crédito é criada corretamente
+- Validações: Tipo, valor bruto, taxa (5%), valor líquido (95%), status
+
+Teste 2: Criação de Transação Válida (Débito)
+- Objetivo: Verificar se uma transação de débito é criada corretamente
+- Validações: Tipo, valor bruto, taxa (2%), valor líquido (98%), status
+
+Teste 3: Cálculo Correto das Taxas (Crédito)
+- Objetivo: Validar o cálculo da taxa de crédito em diferentes valores
+- Casos: 100.0 → 5.0, 200.0 → 10.0
+
+Teste 4: Cálculo Correto das Taxas (Débito)
+- Objetivo: Validar o cálculo da taxa de débito em diferentes valores
+- Casos: 100.0 → 2.0, 500.0 → 10.0
+
+Teste 5: Cancelamento de Transação
+- Objetivo: Verificar se o cancelamento funciona corretamente
+- Validações: Status muda para "Cancelada", valor líquido passa a 0.0
+
+Teste 6: Exceção para Valor Inválido
+- Objetivo: Validar tratamento de valores <= 0
+- Casos: 0, -50.0
+
+Teste 7: Exceção para Tipo Inválido
+- Objetivo: Validar tratamento de tipos diferentes de CREDITO/DEBITO
+- Casos: "PIX", ""
+
+Teste 8: Listagem de Transações
+- Objetivo: Verificar se todas as transações são listadas corretamente
+- Validações: Quantidade de transações listadas
+
+Teste 9: Cancelamento de Transação Já Cancelada
+- Objetivo: Validar que não é possível cancelar duas vezes
+- Validações: Lança TransacaoException
+
+Teste 10: Cancelamento de Transação Inexistente
+- Objetivo: Validar tratamento de ID inexistente
+- Validações: Lança TransacaoException
+
+Teste 11: Geração de Comprovante
+- Objetivo: Verificar se o comprovante é gerado sem erros
+- Validações: Não lança exceção
+
+Teste 12: Geração de Comprovante para Transação Inexistente
+- Objetivo: Validar tratamento de ID inexistente
+- Validações: Lança TransacaoException
+
+8.2 Execução dos Testes
+Comando: mvn test
+Framework: JUnit 5 (Jupiter)
+Cobertura: Todas as funcionalidades principais são testadas
+
+9. POSSÍVEIS EVOLUÇÕES FUTURAS
+-----------------------------
+
+9.1 API REST
+- Implementação de endpoints REST para integração com sistemas externos
+- Tecnologias sugeridas: Spring Boot, Jersey
+- Endpoints planejados:
+  - POST /api/transacoes (processar)
+  - DELETE /api/transacoes/{id} (cancelar)
+  - GET /api/transacoes (listar)
+  - GET /api/transacoes/{id}/comprovante (gerar)
+
+9.2 Integração com Banco de Dados
+- Persistência de transações em banco de dados relacional
+- Tecnologias sugeridas: PostgreSQL, MySQL, H2
+- Framework ORM: Hibernate, JPA
+- Tabelas planejadas:
+  - transacoes (id, tipo, valor_bruto, taxa, valor_liquido, data_hora, status)
+
+9.3 Suporte a Múltiplos Tipos de Cartão
+- Diferenciação entre Visa, Mastercard, Elo, etc.
+- Taxas diferenciadas por bandeira
+- Validação de número de cartão (algoritmo Luhn)
+
+9.4 Integração com Gateways de Pagamento Reais
+- Conexão com APIs de adquirentes reais (Cielo, Rede, Stone)
+- Implementação de webhooks para notificações
+- Suporte a tokenização de cartões
+
+9.5 Interface Gráfica
+- Desenvolvimento de interface web ou desktop
+- Tecnologias sugeridas: React, Angular, JavaFX
+- Funcionalidades: Dashboard, relatórios, gestão de transações
+
+9.6 Autenticação e Autorização
+- Implementação de segurança
+- Tecnologias sugeridas: Spring Security, JWT
+- Controle de acesso por perfil de usuário
+
+9.7 Relatórios e Analytics
+- Geração de relatórios de vendas
+- Análise de transações por período
+- Exportação em PDF, Excel
+
+9.8 Suporte a Parcelamento
+- Implementação de transações parceladas
+- Cálculo de juros
+- Gestão de parcelas
+
+10. CONCLUSÃO
+-------------
+O projeto "maquina-cartao-simples" foi desenvolvido seguindo as melhores práticas de programação em Java, com foco em:
+
+- Encapsulamento: Todos os atributos são privados com acesso controlado via getters/setters
+- Orientação a Objetos: Uso adequado de classes, objetos e herança (Exception)
+- Tratamento de Exceções: Exceções específicas para erros de domínio
+- Testes Unitários: Cobertura abrangente seguindo estratégia TAAC
+- Extensibilidade: Arquitetura preparada para evoluções futuras
+- Documentação: Código bem comentado e documentação técnica completa
+
+O sistema atende todos os requisitos funcionais e não-funcionais especificados, proporcionando uma base sólida para o desenvolvimento de sistemas de pagamento mais complexos. A estrutura modular e a separação de responsabilidades facilitam a manutenção e a evolução do código.
+
+---
+Documento versão 1.0
+Data: 21/06/2026
+Autor: Mariana Silveira
+Projeto: maquina-cartao-simples
